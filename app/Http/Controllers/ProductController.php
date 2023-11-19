@@ -32,6 +32,22 @@ class ProductController extends Controller
         ]);
     }
 
+    public function showByCategory($slug)
+    {
+        $products = Product::latest()->get();
+
+        $data = [];
+        foreach ($products as $product) {
+            if ($product->category->slug == $slug) {
+                $data[] = $product;
+            }
+        }
+
+        return response()->json([
+            'data' => $data
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -43,18 +59,20 @@ class ProductController extends Controller
         ]);
 
         $image = null;
-        if ($request->file) {
+        if ($request->hasFile('file')) { // Memeriksa apakah file ada dalam request
             // upload file
             $fileName = $this->RandomString();
-            $extension = $request->file->extension();
+            $extension = $request->file('file')->extension();
             $image = $fileName . '.' . $extension;
-            Storage::putFileAs('image', $request->file, $image);
+            $request->file('file')->storeAs('public/images', $image); // Simpan file ke direktori yang diinginkan
         }
 
-        $request['image'] = $image;
-        $request['user_id'] = Auth::user()->id;
+        $requestData = $request->except('file');
 
-        $product = Product::create($request->all());
+        $requestData['image'] = $image;
+        $requestData['user_id'] = Auth::user()->id;
+
+        $product = Product::create($requestData);
         return response()->json([
             'data' => $product
         ]);

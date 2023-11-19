@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ImageController;
 use App\Http\Controllers\ProductController;
 use GuzzleHttp\Middleware;
 use Illuminate\Http\Request;
@@ -24,7 +26,14 @@ use Illuminate\Support\Facades\Route;
 // Route::apiResource('products', ProductController::class)->middleware(['auth:sanctum']);
 
 Route::post('/login', [AuthController::class, 'login']);
-Route::apiResource('products', ProductController::class);
+Route::post('/register', [AuthController::class, 'register']);
+
+Route::apiResource('products', ProductController::class)->only('index', 'show');
+Route::get('category/{category:slug}', [ProductController::class, 'showByCategory']);
+
+Route::apiResource('categories', CategoryController::class)->only('index', 'show');
+
+Route::get('image/{filename}', [ImageController::class, 'getImage']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/logout', [AuthController::class, 'logout']);
