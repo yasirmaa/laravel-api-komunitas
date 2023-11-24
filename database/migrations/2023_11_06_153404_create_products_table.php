@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->integer('stock');
             $table->double('price');
+            $table->string('condition');
             $table->text('description');
 
             $table->unsignedBigInteger('user_id');

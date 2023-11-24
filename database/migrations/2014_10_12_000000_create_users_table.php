@@ -20,6 +20,9 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('password');
 
+            $table->string('no_phone')->nullable();
+            $table->string('address')->nullable();
+
             $table->timestamps();
             $table->softDeletes();
         });

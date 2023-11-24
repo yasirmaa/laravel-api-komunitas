@@ -2,8 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\DetailProductResource;
 use Exception;
-use GuzzleHttp\Client;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use App\Traits\HttpResponses;
@@ -27,9 +27,8 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = Product::findOrFail($id);
-        return response()->json([
-            'data' => $product
-        ]);
+
+        return new DetailProductResource($product);
     }
 
     public function showByCategory($slug)
@@ -48,34 +47,57 @@ class ProductController extends Controller
         ]);
     }
 
+    public function showByUser($username)
+    {
+        $products = Product::latest()->get();
+        $products = ProductResource::collection($products);
+
+        $data = [];
+        foreach ($products as $product) {
+            if ($product->user->username == $username) {
+                $data[] = $product;
+            }
+        }
+
+        return response()->json([
+            'data' => $data
+        ]);
+    }
+
     public function store(Request $request)
     {
+        // dd($request);
         $request->validate([
             'name' => 'required',
             'description' => 'required',
             'price' => 'required',
             'stock' => 'required',
             'category_id' => 'required',
+            'condition' => 'required'
         ]);
 
-        $image = null;
-        if ($request->hasFile('file')) { // Memeriksa apakah file ada dalam request
-            // upload file
-            $fileName = $this->RandomString();
-            $extension = $request->file('file')->extension();
-            $image = $fileName . '.' . $extension;
-            $request->file('file')->storeAs('public/images', $image); // Simpan file ke direktori yang diinginkan
+        $image = $request->image;
+        try {
+            if ($request->hasFile('file')) { // Memeriksa apakah file ada dalam request
+                // upload file
+                $fileName = $this->RandomString();
+                $extension = $request->file('file')->extension();
+                $image = $fileName . '.' . $extension;
+                $request->file('file')->storeAs('public/images', $image); // Simpan file ke direktori yang diinginkan
+            }
+
+            $requestData = $request->except('file');
+
+            $requestData['image'] = $image;
+            $requestData['user_id'] = Auth::user()->id;
+
+            $product = Product::create($requestData);
+            return response()->json([
+                'data' => $product
+            ]);
+        } catch (Exception $e) {
+            return $this->error(null, $e, 500);
         }
-
-        $requestData = $request->except('file');
-
-        $requestData['image'] = $image;
-        $requestData['user_id'] = Auth::user()->id;
-
-        $product = Product::create($requestData);
-        return response()->json([
-            'data' => $product
-        ]);
     }
 
     public function update(Request $request, $id)
@@ -88,7 +110,7 @@ class ProductController extends Controller
             }
 
             $product->update($request->only([
-                'name', 'description', 'price', 'stock', 'category_id', 'image'
+                'name', 'description', 'price', 'stock', 'category_id',
             ]));
 
             return $this->success($product, "Product updated successfully", 200);

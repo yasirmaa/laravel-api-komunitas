@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Traits\HttpResponses;
-use Illuminate\Database\Eloquent\Casts\Json;
+use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class AuthController extends Controller
@@ -32,9 +31,7 @@ class AuthController extends Controller
 
         $cookie = cookie('token', $token, 60 * 24);
 
-        // return $token;
-        return $this->success(['user' => $user, 'token' => $token], 'User logged in successfully')->withCookie($cookie);
-        // return $this->success(['user' => $user, 'token' => $token], 'User logged in successfully')->withCookie($cookie);
+        return $this->success(['token' => $token], 'User logged in successfully')->withCookie($cookie);
     }
 
     public function register(Request $request)
@@ -75,6 +72,26 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json(Auth::user());
+        $user = Auth::user();
+        $products = (new ProductController)->showByUser($user->username);
+        return response()->json([
+            'user' => $user,
+            'products' => $products
+        ]);
+    }
+
+    public function update(Request $request)
+    {
+        try {
+            $user = User::find(Auth::user()->id);
+
+            $user->update($request->only([
+                'firstname', 'lastname', 'username', 'email', 'no_phone', 'address'
+            ]));
+
+            return $this->success($user, "Product updated successfully", 200);
+        } catch (Exception $e) {
+            return $this->error(null, $e, 500);
+        }
     }
 }

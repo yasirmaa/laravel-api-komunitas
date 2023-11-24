@@ -7,8 +7,6 @@ use App\Models\Comment;
 use Illuminate\Http\Request;
 use App\Traits\HttpResponses;
 use App\Http\Resources\CommentResource;
-use App\Http\Requests\StoreCommentRequest;
-use App\Http\Requests\UpdateCommentRequest;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CommentController extends Controller
@@ -28,7 +26,7 @@ class CommentController extends Controller
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'content' => 'required'
+            'content' => 'required',
         ]);
 
         $request['user_id'] = auth()->user()->id;
